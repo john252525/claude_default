@@ -5,12 +5,35 @@ import { PrismaService } from '../prisma/prisma.service';
 import { LoginDto } from './dto/login.dto';
 import { RegisterDto } from './dto/register.dto';
 
+interface UserWithRoles {
+  roles: Array<{
+    role: {
+      name: string;
+      permissions: Array<{
+        permission: { action: string; subject: string };
+      }>;
+    };
+  }>;
+}
+
 @Injectable()
 export class AuthService {
   constructor(
     private prisma: PrismaService,
     private jwtService: JwtService,
   ) {}
+
+  private extractRolesAndPermissions(user: UserWithRoles) {
+    const roles = user.roles.map((ur) => ur.role.name);
+    const permissions = [
+      ...new Set(
+        user.roles.flatMap((ur) =>
+          ur.role.permissions.map((rp) => `${rp.permission.action}:${rp.permission.subject}`),
+        ),
+      ),
+    ];
+    return { roles, permissions };
+  }
 
   async login(dto: LoginDto) {
     const user = await this.prisma.user.findUnique({
@@ -39,14 +62,7 @@ export class AuthService {
       throw new UnauthorizedException('Неверный email или пароль');
     }
 
-    const roles = user.roles.map((ur) => ur.role.name);
-    const permissions = [
-      ...new Set(
-        user.roles.flatMap((ur) =>
-          ur.role.permissions.map((rp) => `${rp.permission.action}:${rp.permission.subject}`),
-        ),
-      ),
-    ];
+    const { roles, permissions } = this.extractRolesAndPermissions(user);
 
     const payload = { sub: user.id, email: user.email, roles, permissions };
     const token = this.jwtService.sign(payload);
@@ -107,14 +123,7 @@ export class AuthService {
       },
     });
 
-    const roles = user.roles.map((ur) => ur.role.name);
-    const permissions = [
-      ...new Set(
-        user.roles.flatMap((ur) =>
-          ur.role.permissions.map((rp) => `${rp.permission.action}:${rp.permission.subject}`),
-        ),
-      ),
-    ];
+    const { roles, permissions } = this.extractRolesAndPermissions(user);
 
     const payload = { sub: user.id, email: user.email, roles, permissions };
     const token = this.jwtService.sign(payload);
@@ -156,14 +165,7 @@ export class AuthService {
       throw new UnauthorizedException('Пользователь не найден');
     }
 
-    const roles = user.roles.map((ur) => ur.role.name);
-    const permissions = [
-      ...new Set(
-        user.roles.flatMap((ur) =>
-          ur.role.permissions.map((rp) => `${rp.permission.action}:${rp.permission.subject}`),
-        ),
-      ),
-    ];
+    const { roles, permissions } = this.extractRolesAndPermissions(user);
 
     return {
       id: user.id,

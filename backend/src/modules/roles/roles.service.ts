@@ -16,14 +16,14 @@ export class RolesService {
       orderBy: { createdAt: 'asc' },
     });
 
-    return roles.map((role) => ({
+    return roles.map((role: any) => ({
       id: role.id,
       name: role.name,
       displayName: role.displayName,
       description: role.description,
       isSystem: role.isSystem,
       usersCount: role._count.users,
-      permissions: role.permissions.map((rp) => ({
+      permissions: role.permissions.map((rp: any) => ({
         id: rp.permission.id,
         action: rp.permission.action,
         subject: rp.permission.subject,
@@ -54,7 +54,7 @@ export class RolesService {
       description: role.description,
       isSystem: role.isSystem,
       usersCount: role._count.users,
-      permissions: role.permissions.map((rp) => ({
+      permissions: role.permissions.map((rp: any) => ({
         id: rp.permission.id,
         action: rp.permission.action,
         subject: rp.permission.subject,
